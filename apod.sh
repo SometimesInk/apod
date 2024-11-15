@@ -1,23 +1,56 @@
 #!/bin/bash
 
-# Check for sudo perms
-if [ "$EUID" -ne 0 ]; then
-    echo "Requires 'sudo' perms"
-    exit
-fi
-
 # Variables
 siteUrl="https://apod.nasa.gov/apod/astropix.html"
-allowedTypes="png,jpg,jpeg,webp" # TODO: Config for this
-additionalFlags="-q" # TODO: Config for this
-conversion="magick" # TODO: Config for this
-#finalName="active" # TODO: Config for this
+allowedTypes="png,jpg,jpeg"
+additionalFlags="-q"
+conversion="magick" # Either 'convert' [which is deprecated] or 'magick'
 finalName="apod"
-finalExtension="png" # TODO: Config for this
-#finalLocation="~/.config/hypr/wallpapers/" # TODO: Config for this
+finalExtension="png"
 finalLocation=""
 
-# TODO: Parse config
+# Parse config file
+if [[ -f "apod.ini" ]]; then
+    while read line; do
+        # Check if comment
+        if ! [[ ${line%;*} == "" ]]; then
+            # Find KVp
+            key=${line%=*}
+            value=${line##*=}
+         
+            # Parse keys
+            case $key in
+                "siteUrl")
+                    siteUrl=$value
+                    ;;
+                "allowedTypes")
+                    allowedTypes=$value
+                    ;;
+                "additionalFlags")
+                    additionalFlags=$value
+                    ;;
+                "conversion")
+                    conversion=$value
+                    ;;
+                "finalName")
+                    finalName=$value
+                    ;;
+                "finalExtension")
+                    finalExtension=$value
+                    ;;
+                "finalLocation")
+                    finalLocation=$value
+                    ;;
+            esac
+        fi
+    done <apod.ini
+fi
+
+# Check if final location exists
+if ! [[ -d $finalLocation ]]; then
+    echo "Error: Final location '$finalLocation' does not exist."
+    exit
+fi
 
 # Empty temporary directory if it is already created
 if [[ -e ".tp/" ]]; then
@@ -42,16 +75,19 @@ for file in ".tp/dl"/*; do
     fileName=".tp/pr/"$finalName"_"$index"."
     mv $file $fileName$ext # Rename and move file
     eval $conversion $fileName$ext $fileName$finalExtension # Change file extension
+    rm $fileName$ext
     index=$index+1
 done
 
 if [[ $index -ne 1 ]]; then
     # Keep files depending on configuration
     echo "Selecting file..."
+elif [[ $index -eq 0 ]]; then
+    echo "Error: No valid image found."
 else
     # Move file like nothing happened :D
     echo "Moving and converting file..."
-    mv .tp/pr/$finalName"_0."$finalExtension $finalLocation$finalName"."$finalExtension
+    mv "$fileName$finalExtension" "$finalLocation"
 fi
 
 # Remove temporary files
