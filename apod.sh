@@ -1,5 +1,14 @@
 #!/bin/bash
 
+# Define stop function
+function stop {
+    if [[ -e .tp/ ]]; then
+        echo "Removing temporary files..."
+        rm -r .tp/
+    fi
+    exit
+}
+
 # Variables
 siteUrl="https://apod.nasa.gov/apod/astropix.html"
 allowedTypes="png,jpg,jpeg"
@@ -49,13 +58,13 @@ fi
 # Check if final location exists
 if ! [[ -d $finalLocation ]]; then
     echo "Error: Final location '$finalLocation' does not exist."
-    exit
+    stop
 fi
 
 # Empty temporary directory if it is already created
 if [[ -e ".tp/" ]]; then
     echo "Emptying temporary directory tree..."
-    rm -r .tp/
+    stop
 fi
 
 # Create temporary directory
@@ -84,12 +93,11 @@ if [[ $index -ne 1 ]]; then
     echo "Selecting file..."
 elif [[ $index -eq 0 ]]; then
     echo "Error: No valid image found."
+    stop
 else
-    # Move file like nothing happened :D
     echo "Moving and converting file..."
     mv "$fileName$finalExtension" "$finalLocation"
 fi
 
-# Remove temporary files
-echo "Removing temporary files..."
-rm -r .tp/
+# End it all
+stop
