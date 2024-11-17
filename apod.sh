@@ -1,13 +1,44 @@
 #!/bin/bash
 
+# Flags
+QUIET=0
+LOCALCOPY=0
+
+# Define log function
+function log {
+    if [[ $QUIET -eq 0 ]]; then
+        echo "$*"
+    fi
+}
+
 # Define stop function
 function stop {
     if [[ -e .tp/ ]]; then
-        echo "Removing temporary files..."
+        log Removing temporary files...
         rm -r .tp/
     fi
     exit
 }
+
+# Parse flags
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -q|--quiet)
+            QUIET=1
+            shift
+            shift
+            ;;
+        -l|--local-copy)
+            LOCALCOPY=1
+            shift
+            shift
+            ;;
+        *)
+            echo "Error: Invalid flag/s."
+            stop
+            ;;
+    esac
+done
 
 # Variables
 siteUrl="https://apod.nasa.gov/apod/astropix.html"
@@ -57,27 +88,28 @@ fi
 
 # Check if final location exists
 if ! [[ -d $finalLocation ]]; then
-    echo "Error: Final location '$finalLocation' does not exist."
+    echo "Error: Final location $finalLocation does not exist."
     stop
 fi
 
 # Empty temporary directory if it is already created
 if [[ -e ".tp/" ]]; then
-    echo "Emptying temporary directory tree..."
+    log Emptying temporary directory tree.
     stop
 fi
 
 # Create temporary directory
-echo "Creating temporary directory tree..."
+log Creating temporary directory tree...
 mkdir -p .tp/dl # Download directory
 mkdir -p .tp/pr # Processing directory
 
 # Download all images of wanted image types while rejecting thumbnail images (which have a lesser quality)
-echo "Downloading files..."
-wget -r -l1 -H -R "*_1024.*" -nd -A $allowedTypes -P ./.tp/dl --no-parent --convert-links $additionalFlags $siteUrl
+log Downloading files...
+wget -p -R "*_1024.*" -nd -A $allowedTypes -P ./.tp/dl --no-parent -e robots=off --convert-links $additionalFlags $siteUrl
+
 
 # Rename image/s to wanted outname followed by the index of the image
-echo "Renaming files..."
+log Renaming files...
 index=0
 for file in ".tp/dl"/*; do
     ext="${file##*.}"
@@ -88,15 +120,20 @@ for file in ".tp/dl"/*; do
     index=$index+1
 done
 
-if [[ $index -ne 1 ]]; then
-    # Keep files depending on configuration
-    echo "Selecting file..."
-elif [[ $index -eq 0 ]]; then
+# Local-copy flag
+if [[ LOCALCOPY -eq 1 ]]; then
+    log Copying "local" copy...
+    cp $fileName$finalExtension $finalName"."$finalExtension
+fi
+
+# Select file
+if [[ $index -eq 0 ]]; then
     echo "Error: No valid image found."
-    stop
+elif [[ $index -ne 1 ]]; then
+    echo "Error: Selecting file..."
 else
-    echo "Moving and converting file..."
-    mv "$fileName$finalExtension" "$finalLocation"
+    log Moving and converting file...
+    mv $fileName$finalExtension "$finalLocation/$finalName.$finalExtension"
 fi
 
 # End it all
