@@ -121,7 +121,7 @@ for file in ".tp/dl"/*; do
 done
 
 # Local-copy flag
-if [[ LOCALCOPY -eq 1 ]]; then
+if [[ $LOCALCOPY -eq 1 ]]; then
     log Copying "local" copy...
     cp $fileName$finalExtension $finalName"."$finalExtension
 fi
