@@ -4,14 +4,14 @@
 QUIET=0
 LOCALCOPY=0
 
-# Define log function
+# Log function to toggle outputs with -q flag
 function log {
   if [[ $QUIET -eq 0 ]]; then
     echo "$*"
   fi
 }
 
-# Define stop function
+# Stop function to remove temporary files before exiting
 function stop {
   if [[ -e .tp/ ]]; then
     log Removing temporary files...
@@ -88,12 +88,9 @@ if [[ -f $thisLocation"apod.ini" ]]; then
     fi
   done <$thisLocation"apod.ini"
 else
-  echo "Error: Cannot find config file, consider the 'fileLocation' value."
+  echo "Error: Cannot find config file or config file does not exist."
   stop
 fi
-
-# Set the working directory to this file's location
-cd $fileLocation
 
 # Check if final location exists
 if ! [[ -d $finalLocation ]]; then
@@ -117,6 +114,7 @@ log Downloading files...
 wget -p -R "*_1024.*" -nd -A $allowedTypes -P ./.tp/dl --no-parent -e robots=off --convert-links $additionalFlags $siteUrl
 
 # Rename image/s to wanted outname followed by the index of the image
+# This it done to make it easier to handle files without having to deal with different file extensions
 log Renaming files...
 index=0
 for file in ".tp/dl"/*; do
