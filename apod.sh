@@ -111,7 +111,16 @@ mkdir .tp/pr    # Processing directory
 
 # Download all images of wanted image types while rejecting thumbnail images (which have a lesser quality)
 log Downloading files...
-wget -p -R "*_1024.*" -nd -A $allowedTypes -P ./.tp/dl --no-parent -e robots=off --convert-links $additionalFlags $siteUrl
+
+# -p ; download all images necessary to render the page
+# --no-parent ; don't ascend the parent directory tree
+# -nd ; don't create directory when downloading recusively
+# -P ; download file to that specific directory "./tp/dl"
+# -e robots=off ; don't download robot file
+# -R ; don't download any file matching the string "*_1024.*" (thumbnail images)
+# -A ; only download files of accepted file extensions
+# --convert-links ; fix web links to make for usable images
+wget -p --no-parent -nd -P ./.tp/dl -e robots=off -R "*_1024.*" -A $allowedTypes --convert-links $additionalFlags $siteUrl
 
 # Rename image/s to wanted outname followed by the index of the image
 # This it done to make it easier to handle files without having to deal with different file extensions
