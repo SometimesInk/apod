@@ -178,7 +178,7 @@ function stop {
   exit
 }
 
-# Check for --output-file flag
+# Check for '--output-file' flag
 if ! [[ $OUTPUT == "" ]]; then
   log Changing final location to output...
   finalLocation=$OUTPUT
@@ -226,7 +226,7 @@ for file in $temporaryFileLocation"dl"/*; do
   index=$index+1
 done
 
-# Check for --local-copy flag
+# Check for '--local-copy' flag
 if [[ LOCALCOPY -eq 1 ]]; then
   log Copying local copy...
   cp $fileName$finalExtension $finalName"."$finalExtension
