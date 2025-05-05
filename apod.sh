@@ -12,82 +12,22 @@
 # This script downloads NASA's daily image and sets it as your wallpaper
 
 # Initialize flags
+
+# Location of the final file
+OUTPUT=""
+
+# Echoes to the stderr
 #
-# Cancels messages based on their importance
-# Values: 0 (and less) --- No canceled messages
-#         1            --- Non error messages are canceled
-#         2 (and more) --- No messages are sent
-QUIET=0
-# Creates a copy at the file's location
-# Values: 0 --- No file is created
-#         1 --- File will be copied to script location
-LOCALCOPY=0
-# Changes the final file's location to this one
-OUTPUTFILE=""
-
-# Echoes information messages
-# The '--quiet' flag stops these messages
-function log {
-  if [[ $QUIET -lt 1 ]]; then
-    echo "$*"
-  fi
-}
-
-# Echoes error messages based on an error code
-# The '--quiet-errors' flag stops these messages
-# Messages follow this format: "Error #(Code) --- (Message)"
-function logerr {
-  if [[ $QUIET -lt 2 ]]; then
-    errorMessage="Error #"$2" --- "
-    case $2 in
-    0) # Invalid error number
-      errorMessage=$errorMessage"Invalid error code."
-      ;;
-    1) # Invalid flag/s
-      errorMessage=$errorMessage"Invalid flag/s."
-      ;;
-    2)
-      errorMessage=$errorMessage"Cannot find config file or config file does not exist."
-      ;;
-    3)
-      errorMessage=$errorMessage"Final location does not exist."
-      ;;
-    4)
-      errorMessage=$errorMessage"No valid image found."
-      ;;
-    5)
-      errorMessage=$errorMessage"Cannot successfully correct file."
-      ;;
-    *)
-      logerr 1 0
-      ;;
-    esac
-    echo $errorMessage
-  fi
-
-  # Stop program
-  if [[ $1 -eq 1 ]]; then
-    exit
-  fi
+# @param * Error message
+function err {
+  >&2 echo "E:" "$@"
 }
 
 # Parse flags
 while [[ $# -gt 0 ]]; do
   case $1 in
   -q | --quiet)
-    QUIET=1
-    shift
-    ;;
-  -Q | --quiet-errors)
-    QUIET=2
-    shift
-    ;;
-  -q=* | --quiet=* | -Q=* | --quiet-error=*)
-    QUIET=${1##*=}
-    shift
-    ;;
-  -l | --local-copy)
-    LOCALCOPY=1
+    echo off
     shift
     ;;
   -o=* | --output-file=*)
@@ -95,7 +35,7 @@ while [[ $# -gt 0 ]]; do
     shift
     ;;
   *)
-    logerr 1 1
+    err "Invalid flag $1"
     ;;
   esac
 done
@@ -173,15 +113,15 @@ fi
 function stop {
   if [[ -e $temporaryFileLocation ]]; then
     log Removing temporary files...
-    rm -r $temporaryFileLocation
+    rm -r "$temporaryFileLocation"
   fi
   exit
 }
 
 # Check for '--output-file' flag
-if ! [[ $OUTPUT == "" ]]; then
+if ! [[ $OUTPUTFILE == "" ]]; then
   log Changing final location to output...
-  finalLocation=$OUTPUT
+  finalLocation=$OUTPUTFILE
 fi
 
 # Check if final location exists
@@ -234,9 +174,9 @@ fi
 
 # Move file to its final location
 if [[ $index -eq 0 ]]; then
-  logerr 1 4
+  err "No file found."
 elif [[ $index -ne 1 ]]; then
-  logerr 1 5
+  err "Too many file found"
 else
   log Moving and converting file...
   mv $fileName$finalExtension "$finalLocation/$finalName.$finalExtension"
